@@ -2,6 +2,7 @@ from io import open
 import urllib
 from urllib2 import Request, urlopen
 from bs4 import BeautifulSoup
+import os
 
 # Open the Faculty/Affiliations file
 faculty_affiliations_file = open('../faculty-affiliations.csv', 'r')
@@ -25,7 +26,7 @@ here_geocode_url = here_geocode_url.replace('{APP_CODE}', here_config['APP_CODE'
 # Get distinct affiliations
 affiliations = []
 for line in faculty_affiliations_file.readlines()[1:]:
-    institution = line.split(',')[-1].strip()
+    institution = line.split(',', 1)[-1].strip()
     affiliations.append(institution)
 
 faculty_affiliations_file.close()
@@ -33,8 +34,13 @@ faculty_affiliations_file.close()
 # uniq
 affiliations = list(set(affiliations))
 
+#Remove the file if it exists to start fresh
+if os.path.exists('../affiliation-location.csv'):
+    os.remove('../affiliation-location.csv')
+
 affiliation_location_file = open('../affiliation-location.csv', 'a')
 
+affiliation_location_file.write(u"name,latitude,longitude\n")
 # Get the location of the affiliations
 for affiliation in affiliations:
     # Create here API call
@@ -48,13 +54,12 @@ for affiliation in affiliations:
         displayposition = soup.find('Location').find('DisplayPosition')
         latitude = displayposition.find("Latitude").text
         longitude = displayposition.find("Longitude").text
+        affiliation_location_file.write(u"%s,%s,%s\n" % (affiliation, latitude, longitude))
+        print '%s located and written to file' % affiliation
     except:
         print '%s has no coordinates available' % affiliation
 
+affiliation_location_file.flush()
 affiliation_location_file.close()
-
-
-
-
-
+affiliation_location_file.close()
 
